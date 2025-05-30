@@ -121,6 +121,33 @@ You can also run the built binary directly:
 ./build/passkey-origin-validator --mock
 ```
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for automated testing and releasing. The workflow is configured in the `.github/workflows/ci.yml` file and consists of two jobs:
+
+1. **Test Job**: Runs the project's tests on every pull request and commit to the master branch.
+2. **Release Job**: Creates a release binary using GoReleaser when a tag is pushed to the repository.
+
+### Creating a Release
+
+To create a new release:
+
+1. Ensure all your changes are committed and pushed to the master branch
+2. Create and push a new tag:
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+This will trigger the release job in the GitHub Actions workflow, which will:
+- Build binaries for multiple platforms (Linux, macOS, Windows)
+- Create archives of the binaries
+- Generate checksums
+- Create a GitHub release with the binaries and changelog
+
+The release configuration is defined in the `.goreleaser.yml` file.
+
 ## Project Structure
 
 - `cmd/passkey-origin-validator/main.go` - Entry point for the application
