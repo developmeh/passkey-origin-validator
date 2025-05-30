@@ -2,11 +2,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/developmeh/passkey-origin-validator/internal/counter"
-	"net/url"
-	"strings"
+	"os"
 )
 
 // TestWithMockData demonstrates the functionality of the counter package with mock data.
@@ -62,49 +60,31 @@ func TestWithMockData() {
 	fmt.Printf("Validating caller origin: https://unknown.com\nStatus: %s\n", status2)
 }
 
-// parseAndCountLabels parses mock JSON data and counts the labels.
+// parseAndCountLabels parses JSON data and counts the labels using the counter package.
 func parseAndCountLabels(jsonData []byte) (*counter.LabelCount, error) {
-	// Create a mock result
-	result := &counter.LabelCount{
-		URL:          "https://mock-domain.com/.well-known/webauthn",
-		UniqueLabels: make(map[string]bool),
-		RawJSON:      string(jsonData),
+	// Create a temporary file to store the JSON data
+	tempFile, err := os.CreateTemp("", "webauthn-*.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary file: %w", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up the temporary file when done
+
+	// Write the JSON to the temporary file
+	if _, err := tempFile.Write(jsonData); err != nil {
+		return nil, fmt.Errorf("failed to write to temporary file: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close temporary file: %w", err)
 	}
 
-	// Parse the JSON
-	var webAuthnResp counter.WebAuthnResponse
-	if err := json.Unmarshal(jsonData, &webAuthnResp); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	// Use the counter package to count labels from the file
+	result, err := counter.CountLabelsFromFile(tempFile.Name())
+	if err != nil {
+		return nil, fmt.Errorf("failed to count labels: %w", err)
 	}
 
-	// Count unique labels
-	for _, originStr := range webAuthnResp.Origins {
-		originURL, err := url.Parse(originStr)
-		if err != nil {
-			continue
-		}
-
-		// Extract the domain
-		domain := originURL.Host
-		if domain == "" {
-			continue
-		}
-
-		// Extract the eTLD+1 label (first part of the domain)
-		parts := strings.Split(domain, ".")
-		if len(parts) < 2 {
-			continue
-		}
-
-		label := parts[0]
-		if !result.UniqueLabels[label] {
-			result.UniqueLabels[label] = true
-			result.LabelsFound = append(result.LabelsFound, label)
-		}
-	}
-
-	result.Count = len(result.UniqueLabels)
-	result.ExceedsLimit = result.Count > counter.MaxLabels
+	// Override the URL to indicate this is from example data
+	result.URL = "https://example-data/.well-known/webauthn"
 
 	return result, nil
 }

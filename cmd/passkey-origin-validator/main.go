@@ -5,6 +5,14 @@ import (
 	"github.com/developmeh/passkey-origin-validator/cmd/passkey-origin-validator/cmd"
 )
 
+// Version information set by goreleaser
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
+	cmd.SetVersionInfo(version, commit, date)
 	cmd.Execute()
 }
