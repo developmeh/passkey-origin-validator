@@ -1,0 +1,23 @@
+# Sample configuration file for passkey-origin-validator
+# Save this as $HOME/.passkey-origin-validator.yaml or specify with --config flag
+
+# Enable debug logging
+debug: false
+
+# Default domain to check if not specified
+default_domain: "https://webauthn.io"
+
+# Use a local JSON file instead of fetching from a domain
+# file: "./test.json"
+
+# Run with example data for testing
+example: false
+
+# Default caller origin to validate (for validate command)
+# origin: "https://example.com"
+
+# HTTP request timeout in seconds
+timeout: 10
+
+# Maximum number of labels allowed
+max_labels: 5

@@ -2,54 +2,11 @@
 
 A tool for validating passkey/WebAuthn origin constraints in .well-known/webauthn endpoints. This tool is based on the Chromium project's implementation of WebAuthn security checking and helps ensure that your WebAuthn implementation follows the same constraints as browsers.
 
-## Features
+For detailed information about the project background, label definition, and technical details, please see [project_status.md](project_status.md).
 
-- Fetches the .well-known/webauthn endpoint for a given domain
-- Parses the JSON response and extracts unique labels
-- Counts the number of unique labels and warns if it exceeds the maximum limit (5)
-- Provides detailed output with the list of labels found
-- Validates if a caller origin is authorized by a relying party's .well-known/webauthn file
-- Implements the same validation logic as the Chromium project
-- Supports reading from local JSON files instead of fetching from domains
-- Modern CLI with subcommands and flags using Cobra
-- Configuration management using Viper
-- Debug logging with feature flag support
-- Non-zero exit status if the number of labels exceeds the limit
+## Installation and Dependencies
 
-## Background
-
-The Chromium project's WebAuthn implementation includes a security check that limits the number of unique labels in a .well-known/webauthn endpoint to 5. This is to prevent potential security issues with domains that try to authorize too many different origins.
-
-### Label Definition
-
-According to the passkey specification, a label is defined as the name directly preceding the Effective Top-Level Domain (ETLD). In other words, the label is the +1 part of the ETLD+1.
-
-For example:
-- For "example.com", the TLD is ".com", and the label is "example"
-- For "test.example.org", the TLD is ".org", and the label is "test.example"
-- For "one.thing.com", the TLD is ".com", and the label is "one.thing"
-- For "one.anotherthing.com", the TLD is ".com", and the label is "one.anotherthing"
-
-The tool uses the `golang.org/x/net/publicsuffix` package to determine the ETLD+1 for a domain, and then extracts the label from it.
-
-From the Chromium code:
-```cpp
-constexpr size_t kMaxLabels = 5;
-bool hit_limits = false;
-base::flat_set<std::string> labels_seen;
-// ...
-if (!base::Contains(labels_seen, etld_plus_1_label)) {
-  if (labels_seen.size() >= kMaxLabels) {
-    hit_limits = true;
-    continue;
-  }
-  labels_seen.insert(etld_plus_1_label);
-}
-```
-
-This tool helps test whether a domain's .well-known/webauthn endpoint would pass this security check.
-
-## Dependencies
+### Dependencies
 
 - [Go](https://golang.org/) (version 1.24 or later)
 - [Cobra](https://github.com/spf13/cobra) - A Commander for modern Go CLI interactions
@@ -57,9 +14,7 @@ This tool helps test whether a domain's .well-known/webauthn endpoint would pass
 
 These dependencies will be automatically installed when running `make deps`.
 
-## Building and Running
-
-The project uses a Makefile for building and running:
+### Building
 
 ```bash
 # Get dependencies
@@ -68,46 +23,43 @@ make deps
 # Build the application
 make build
 
-# Count labels for default domain (webauthn.io)
-make run
-
-# Count labels with debug logging
-make run DEBUG=true
-
-# Count labels for specific domain
-make run DOMAIN=google.com
-
-# Count labels from local file
-make run FILE=./test.json
-
-# Validate origin against default domain
-make validate ORIGIN=https://example.com
-
-# Validate origin against specific domain
-make validate ORIGIN=https://example.com DOMAIN=google.com
-
-# Validate origin against local file
-make validate ORIGIN=https://example.com FILE=./test.json
-
-# Run with mock data for testing
-make mock
-
 # Clean build artifacts
 make clean
 
 # Run tests
 make test
-
-# Show help
-make help
 ```
 
-You can also run the built binary directly:
+## Command Reference
 
+The tool provides several commands and flags to validate WebAuthn origin constraints. Here's a comprehensive guide to using each command:
+
+### Global Flags
+
+These flags can be used with any command:
+
+| Flag | Description |
+|------|-------------|
+| `--config <file>` | Config file (default is $HOME/.passkey-origin-validator.yaml) |
+| `--debug` | Enable debug logging |
+| `--file <file>` | Use a local JSON file instead of fetching from a domain |
+| `--example` | Run with example data for testing |
+| `--version`, `-v` | Print version information and exit |
+
+### Count Command
+
+The `count` command fetches the .well-known/webauthn endpoint for a given domain, parses the JSON response, and counts the number of unique labels.
+
+**Usage:**
+```
+passkey-origin-validator count [domain]
+```
+
+**Arguments:**
+- `domain` (optional): The domain to check. If not provided, defaults to webauthn.io.
+
+**Examples:**
 ```bash
-# Show help
-./build/passkey-origin-validator --help
-
 # Count labels for default domain (webauthn.io)
 ./build/passkey-origin-validator count
 
@@ -119,7 +71,40 @@ You can also run the built binary directly:
 
 # Count labels from local file
 ./build/passkey-origin-validator count --file ./test.json
+```
 
+**Using with Makefile:**
+```bash
+# Count labels for default domain (webauthn.io)
+make run
+
+# Count labels with debug logging
+make run DEBUG=true
+
+# Count labels for specific domain
+make run DOMAIN=google.com
+
+# Count labels from local file
+make run FILE=./test.json
+```
+
+### Validate Command
+
+The `validate` command checks if a caller origin is authorized by a domain's .well-known/webauthn file.
+
+**Usage:**
+```
+passkey-origin-validator validate [domain] --origin <origin>
+```
+
+**Arguments:**
+- `domain` (optional): The domain to check. If not provided, defaults to webauthn.io.
+
+**Required Flags:**
+- `--origin <origin>`: The caller origin to validate (e.g., https://example.com)
+
+**Examples:**
+```bash
 # Validate origin against default domain
 ./build/passkey-origin-validator validate --origin https://example.com
 
@@ -128,10 +113,133 @@ You can also run the built binary directly:
 
 # Validate origin against local file
 ./build/passkey-origin-validator validate --origin https://example.com --file ./test.json
-
-# Run with mock data for testing
-./build/passkey-origin-validator --mock
 ```
+
+**Using with Makefile:**
+```bash
+# Validate origin against default domain
+make validate ORIGIN=https://example.com
+
+# Validate origin against specific domain
+make validate ORIGIN=https://example.com DOMAIN=google.com
+
+# Validate origin against local file
+make validate ORIGIN=https://example.com FILE=./test.json
+```
+
+### Example Data
+
+You can run the tool with example data to see how it works without making actual HTTP requests:
+
+```bash
+# Run with example data
+./build/passkey-origin-validator --example
+
+# Using Makefile
+make mock
+```
+
+This will demonstrate the functionality with predefined test cases, showing both successful and failed validations.
+
+## Configuration
+
+The tool can be configured using a YAML configuration file. By default, it looks for a file named `.passkey-origin-validator.yaml` in your home directory. You can specify a different configuration file using the `--config` flag.
+
+### Configuration File Format
+
+The configuration file uses YAML format and supports the following options:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `debug` | boolean | Enable debug logging |
+| `default_domain` | string | Default domain to check if not specified |
+| `file` | string | Use a local JSON file instead of fetching from a domain |
+| `example` | boolean | Run with example data for testing |
+| `origin` | string | Default caller origin to validate (for validate command) |
+| `timeout` | integer | HTTP request timeout in seconds |
+| `max_labels` | integer | Maximum number of labels allowed |
+
+### Sample Configuration File
+
+A sample configuration file is provided in the repository as `sample-config.yaml`. You can copy this file to your home directory and customize it:
+
+```bash
+# Copy the sample config to your home directory
+cp sample-config.yaml ~/.passkey-origin-validator.yaml
+```
+
+Here's the content of the sample configuration file:
+
+```yaml
+# Sample configuration file for passkey-origin-validator
+# Save this as $HOME/.passkey-origin-validator.yaml or specify with --config flag
+
+# Enable debug logging
+debug: false
+
+# Default domain to check if not specified
+default_domain: "https://webauthn.io"
+
+# Use a local JSON file instead of fetching from a domain
+# file: "./test.json"
+
+# Run with example data for testing
+example: false
+
+# Default caller origin to validate (for validate command)
+# origin: "https://example.com"
+
+# HTTP request timeout in seconds
+timeout: 10
+
+# Maximum number of labels allowed
+max_labels: 5
+```
+
+### Using the Configuration File
+
+To use the configuration file:
+
+1. Create a YAML file with your desired configuration options
+2. Save it as `.passkey-origin-validator.yaml` in your home directory, or
+3. Specify the path to your config file with the `--config` flag:
+
+```bash
+./build/passkey-origin-validator --config /path/to/your/config.yaml count
+```
+
+Configuration values in the file can be overridden by command-line flags. For example, if your config file has `debug: false` but you run with `--debug`, debug logging will be enabled for that run.
+
+## Debugging
+
+The tool provides debug logging that can be enabled with the `--debug` flag or by setting `DEBUG=true` when using the Makefile. Debug logging provides additional information about:
+
+- The domain being tested
+- The maximum number of labels allowed
+- The number of unique labels found
+- The list of labels found
+- Whether the number of labels exceeds the limit
+- JSON parsing details
+
+Example:
+```bash
+# Enable debug logging with direct command
+./build/passkey-origin-validator count --debug
+
+# Enable debug logging with Makefile
+make run DEBUG=true
+```
+
+## Exit Status
+
+The tool returns different exit codes depending on the result:
+
+| Exit Code | Description |
+|-----------|-------------|
+| `0` | Success (number of labels is within the limit) |
+| `1` | Error (failed to fetch or parse the .well-known/webauthn endpoint) |
+| `2` | Warning (number of labels exceeds the limit) |
+| `3` | Validation failure (caller origin is not authorized) |
 
 ## CI/CD Pipeline
 
@@ -139,8 +247,6 @@ This project uses GitHub Actions for automated testing and releasing. The workfl
 
 1. **Test Job**: Runs the project's tests on every pull request and commit to the master branch.
 2. **Release Job**: Creates a release binary using GoReleaser when a tag is pushed to the repository.
-
-The workflow requires write permissions to the repository contents to create releases. These permissions are configured in the workflow file.
 
 ### Creating a Release
 
@@ -161,62 +267,6 @@ This will trigger the release job in the GitHub Actions workflow, which will:
 - Create a GitHub release with the binaries and changelog
 
 The release configuration is defined in the `.goreleaser.yml` file.
-
-## Project Structure
-
-- `cmd/passkey-origin-validator/main.go` - Entry point for the application
-- `cmd/passkey-origin-validator/cmd/` - Command-line interface using Cobra
-  - `root.go` - Root command and global flags
-  - `count.go` - Command for counting labels
-  - `validate.go` - Command for validating origins
-  - `mock.go` - Mock data functionality
-- `internal/counter/` - Package for fetching and analyzing .well-known/webauthn endpoints
-  - `counter.go` - Core functionality for counting labels and validating origins
-  - `counter_test.go` - Tests for the counter package
-
-## API Reference
-
-### CountLabels
-
-```
-func CountLabels(domain string) (*LabelCount, error)
-```
-
-Fetches the .well-known/webauthn endpoint for the given domain and counts the unique labels.
-
-### CountLabelsFromFile
-
-```
-func CountLabelsFromFile(filePath string) (*LabelCount, error)
-```
-
-Reads a JSON file and counts the unique labels, similar to CountLabels but with a file as input instead of a URL.
-
-### ValidateWellKnownJSON
-
-```
-func ValidateWellKnownJSON(callerOrigin string, jsonData []byte) AuthenticatorStatus
-```
-
-Validates if a caller origin is authorized by a relying party's .well-known/webauthn file. This function is based on the Chromium implementation of `ValidateWellKnownJSON` and follows the same logic:
-
-1. Parses the JSON data
-2. Checks if the origins array exists
-3. Parses the caller origin
-4. Counts unique labels (eTLD+1) and checks if the caller origin is authorized
-5. Returns the appropriate AuthenticatorStatus:
-   - `StatusSuccess` - The caller origin is authorized
-   - `StatusBadRelyingPartyIDJSONParseError` - The JSON could not be parsed
-   - `StatusBadRelyingPartyIDNoJSONMatch` - The caller origin is not authorized
-   - `StatusBadRelyingPartyIDNoJSONMatchHitLimits` - The caller origin is not authorized and the number of unique labels exceeds the limit
-
-This function matches the test cases in the Chromium project's `WebAuthRequestSecurityCheckerWellKnownJSONTest`.
-
-## Exit Status
-
-- `0` - Success (number of labels is within the limit)
-- `1` - Error (failed to fetch or parse the .well-known/webauthn endpoint)
-- `2` - Warning (number of labels exceeds the limit)
 
 ## License
 
