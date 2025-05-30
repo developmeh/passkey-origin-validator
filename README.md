@@ -128,6 +128,8 @@ This project uses GitHub Actions for automated testing and releasing. The workfl
 1. **Test Job**: Runs the project's tests on every pull request and commit to the master branch.
 2. **Release Job**: Creates a release binary using GoReleaser when a tag is pushed to the repository.
 
+The workflow requires write permissions to the repository contents to create releases. These permissions are configured in the workflow file.
+
 ### Creating a Release
 
 To create a new release:

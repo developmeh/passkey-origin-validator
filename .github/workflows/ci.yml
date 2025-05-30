@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [ master ]
 
+# Permissions needed for GitHub token
+permissions:
+  contents: write  # This is required for creating releases and uploading assets
+
 jobs:
   test:
     name: Test
