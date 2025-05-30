@@ -1,4 +1,5 @@
 # GoReleaser configuration for passkey-origin-validator
+version: 2
 project_name: passkey-origin-validator
 
 before:
@@ -23,7 +24,7 @@ builds:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archives:
-  - format: tar.gz
+  - id: default
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -31,15 +32,15 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: 'checksums.txt'
 
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+snapshot: {}
 
 changelog:
   sort: asc
