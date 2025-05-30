@@ -3,6 +3,7 @@ package counter
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 const (
@@ -67,6 +70,24 @@ type LabelCount struct {
 	LabelsFound  []string
 	ErrorMessage string
 	RawJSON      string
+}
+
+// getLabel extracts the eTLD+1 label from a domain using the publicsuffix package.
+// This mirrors the behavior of net::registry_controlled_domains::GetDomainAndRegistry in Chromium.
+func getLabel(domain string) (string, error) {
+	// Find the first dot in the eTLD+1
+	dotIndex := strings.Index(domain, ".")
+	if dotIndex == -1 {
+		// If there's no dot, domain isn't valid and we don't care
+		return domain, errors.New("Skip Domain not valid")
+	}
+
+	// Get the eTLD+1 using the publicsuffix package
+	tld, _ := publicsuffix.PublicSuffix(domain)
+
+	// Extract the label (the part before the first dot)
+	label := strings.TrimSuffix(domain, tld)
+	return label, nil
 }
 
 // CountLabels fetches the .well-known/webauthn endpoint for the given domain and counts the unique labels.
@@ -153,13 +174,12 @@ func CountLabels(domain string) (*LabelCount, error) {
 			continue
 		}
 
-		// Extract the eTLD+1 label (first part of the domain)
-		parts := strings.Split(domain, ".")
-		if len(parts) < 2 {
+		// Extract the eTLD+1 label using publicsuffix package
+		label, err := getLabel(domain)
+		if err != nil {
+			// Skip this origin if we can't extract the label
 			continue
 		}
-
-		label := parts[0]
 		if !result.UniqueLabels[label] {
 			result.UniqueLabels[label] = true
 			result.LabelsFound = append(result.LabelsFound, label)
@@ -174,6 +194,9 @@ func CountLabels(domain string) (*LabelCount, error) {
 
 // ValidateWellKnownJSON validates if a caller origin is authorized by a relying party's .well-known/webauthn file.
 // This function is based on the Chromium implementation of ValidateWellKnownJSON.
+// It checks if the caller origin is in the list of authorized origins in the .well-known/webauthn file.
+// It also enforces a limit on the number of unique eTLD+1 labels (MaxLabels) that can be processed.
+// If the limit is reached before finding the caller origin, it returns StatusBadRelyingPartyIDNoJSONMatchHitLimits.
 func ValidateWellKnownJSON(callerOrigin string, jsonData []byte) AuthenticatorStatus {
 	// Parse the JSON
 	var webAuthnResp WebAuthnResponse
@@ -208,13 +231,13 @@ func ValidateWellKnownJSON(callerOrigin string, jsonData []byte) AuthenticatorSt
 			continue
 		}
 
-		// Extract the eTLD+1 label (first part of the domain)
-		parts := strings.Split(domain, ".")
-		if len(parts) < 2 {
+		// Extract the eTLD+1 label using publicsuffix package
+		etldPlus1Label, err := getLabel(domain)
+		if err != nil {
+			// Skip this origin if we can't extract the label
 			continue
 		}
 
-		etldPlus1Label := parts[0]
 		if !uniqueLabels[etldPlus1Label] {
 			if len(uniqueLabels) >= MaxLabels {
 				hitLimits = true
@@ -283,13 +306,13 @@ func CountLabelsFromFile(filePath string) (*LabelCount, error) {
 			continue
 		}
 
-		// Extract the eTLD+1 label (first part of the domain)
-		parts := strings.Split(domain, ".")
-		if len(parts) < 2 {
+		// Extract the eTLD+1 label using publicsuffix package
+		label, err := getLabel(domain)
+		if err != nil {
+			// Skip this origin if we can't extract the label
 			continue
 		}
 
-		label := parts[0]
 		if !result.UniqueLabels[label] {
 			result.UniqueLabels[label] = true
 			result.LabelsFound = append(result.LabelsFound, label)

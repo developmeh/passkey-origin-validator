@@ -8,6 +8,20 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Version information
+var (
+	version string
+	commit  string
+	date    string
+)
+
+// SetVersionInfo sets the version information from main
+func SetVersionInfo(v, c, d string) {
+	version = v
+	commit = c
+	date = d
+}
+
 var (
 	// Used for flags
 	cfgFile string
@@ -26,6 +40,13 @@ var (
  and count the number of unique labels. It can also validate if a caller origin is authorized
  by a relying party's .well-known/webauthn file, following the same constraints as browsers.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// Check if version flag is provided
+			versionFlag, _ := cmd.Flags().GetBool("version")
+			if versionFlag {
+				fmt.Printf("passkey-origin-validator version %s, commit %s, built at %s\n", version, commit, date)
+				return
+			}
+
 			// Check if we're running with mock data
 			if example {
 				runMockData()
@@ -55,6 +76,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().StringVar(&file, "file", "", "Use a local JSON file instead of fetching from a domain")
 	rootCmd.PersistentFlags().BoolVar(&example, "example", false, "Run with example data for testing")
+	rootCmd.PersistentFlags().BoolP("version", "v", false, "Print version information and exit")
 }
 
 // initConfig reads in config file and ENV variables if set.

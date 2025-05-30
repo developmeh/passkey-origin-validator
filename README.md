@@ -20,6 +20,18 @@ A tool for validating passkey/WebAuthn origin constraints in .well-known/webauth
 
 The Chromium project's WebAuthn implementation includes a security check that limits the number of unique labels in a .well-known/webauthn endpoint to 5. This is to prevent potential security issues with domains that try to authorize too many different origins.
 
+### Label Definition
+
+According to the passkey specification, a label is defined as the name directly preceding the Effective Top-Level Domain (ETLD). In other words, the label is the +1 part of the ETLD+1.
+
+For example:
+- For "example.com", the ETLD is ".com", and the label is "example"
+- For "test.example.org", the ETLD is ".org", and the label is "example"
+- For "one.thing.com", the ETLD is ".com", and the label is "thing"
+- For "one.anotherthing.com", the ETLD is ".com", and the label is "anotherthing"
+
+The tool uses the `golang.org/x/net/publicsuffix` package to determine the ETLD+1 for a domain, and then extracts the label from it.
+
 From the Chromium code:
 ```cpp
 constexpr size_t kMaxLabels = 5;
