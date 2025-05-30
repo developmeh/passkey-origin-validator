@@ -25,10 +25,10 @@ The Chromium project's WebAuthn implementation includes a security check that li
 According to the passkey specification, a label is defined as the name directly preceding the Effective Top-Level Domain (ETLD). In other words, the label is the +1 part of the ETLD+1.
 
 For example:
-- For "example.com", the ETLD is ".com", and the label is "example"
-- For "test.example.org", the ETLD is ".org", and the label is "example"
-- For "one.thing.com", the ETLD is ".com", and the label is "thing"
-- For "one.anotherthing.com", the ETLD is ".com", and the label is "anotherthing"
+- For "example.com", the TLD is ".com", and the label is "example"
+- For "test.example.org", the TLD is ".org", and the label is "test.example"
+- For "one.thing.com", the TLD is ".com", and the label is "one.thing"
+- For "one.anotherthing.com", the TLD is ".com", and the label is "one.anotherthing"
 
 The tool uses the `golang.org/x/net/publicsuffix` package to determine the ETLD+1 for a domain, and then extracts the label from it.
 
