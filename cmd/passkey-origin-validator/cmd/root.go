@@ -13,29 +13,29 @@ var (
 	cfgFile string
 	debug   bool
 	file    string
-	mock    bool
+	example bool
 
- // rootCmd represents the base command when called without any subcommands
- rootCmd = &cobra.Command{
- 	Use:   "passkey-origin-validator",
- 	Short: "A tool for validating passkey/WebAuthn origin constraints in .well-known/webauthn endpoints",
- 	Long: `A tool for validating passkey/WebAuthn origin constraints in .well-known/webauthn endpoints.
+	// rootCmd represents the base command when called without any subcommands
+	rootCmd = &cobra.Command{
+		Use:   "passkey-origin-validator",
+		Short: "A tool for validating passkey/WebAuthn origin constraints in .well-known/webauthn endpoints",
+		Long: `A tool for validating passkey/WebAuthn origin constraints in .well-known/webauthn endpoints.
  This tool is based on the Chromium project's implementation of WebAuthn security checking.
 
  It can fetch the .well-known/webauthn endpoint for a given domain, parse the JSON response,
  and count the number of unique labels. It can also validate if a caller origin is authorized
  by a relying party's .well-known/webauthn file, following the same constraints as browsers.`,
- 	Run: func(cmd *cobra.Command, args []string) {
- 		// Check if we're running with mock data
- 		if mock {
- 			runMockData()
- 			return
- 		}
+		Run: func(cmd *cobra.Command, args []string) {
+			// Check if we're running with mock data
+			if example {
+				runMockData()
+				return
+			}
 
- 		// If no command is specified, show help
- 		cmd.Help()
- 	},
- }
+			// If no command is specified, show help
+			cmd.Help()
+		},
+	}
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -54,7 +54,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.passkey-origin-validator.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().StringVar(&file, "file", "", "Use a local JSON file instead of fetching from a domain")
-	rootCmd.PersistentFlags().BoolVar(&mock, "mock", false, "Run with mock data for testing")
+	rootCmd.PersistentFlags().BoolVar(&example, "example", false, "Run with example data for testing")
 }
 
 // initConfig reads in config file and ENV variables if set.

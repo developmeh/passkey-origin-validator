@@ -61,11 +61,11 @@ validate: build
 	fi; \
 	eval $$CMD
 
-# Run with mock data
-.PHONY: mock
-mock: build
-	@echo "Running $(BINARY_NAME) with mock data..."
-	@CMD="./$(BUILD_DIR)/$(BINARY_NAME) --mock"; \
+# Run with example data
+.PHONY: example
+example: build
+	@echo "Running $(BINARY_NAME) with example data..."
+	@CMD="./$(BUILD_DIR)/$(BINARY_NAME) --example"; \
 	if [ "$(DEBUG)" = "true" ]; then \
 		echo "Debug mode enabled"; \
 		CMD="$$CMD --debug"; \

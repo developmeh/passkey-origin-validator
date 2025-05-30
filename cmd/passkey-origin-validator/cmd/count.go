@@ -21,7 +21,7 @@ If no domain is provided, it uses the default domain (webauthn.io).
 If the --file flag is provided, it reads from the specified file instead.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check if we're running with mock data
-		if mock {
+		if example {
 			runMockData()
 			return
 		}
